@@ -1,6 +1,7 @@
 import os
 import sys
 import cv2
+import numpy as np
 from matplotlib import pyplot as plt
 
 import Brightness_Correction as BC
@@ -19,20 +20,32 @@ if __name__ == "__main__":
 	for root, subdirectories, files in os.walk(SOURCE_DIR):
 		for file in files:
 
+			# File name
 			print os.path.join(root, file)
 			image = cv2.imread(os.path.join(root, file))
-			print image.shape
+			print "Image shape: {}".format(image.shape)
+			
+			# BGR Histogram
 			histogram = BC.createHistogram(image)
-			print len(histogram)
-			# print histogram
-
 			graph = BC.drawHistogram(histogram)
 			graph.title("%s Histogram" % file)
 			graph.savefig(os.path.join(OUTPUT_DIR, '%s_Hist.jpg' % file))
 
-			combined_hist, combined_hist_plot = BC.joinHistLayers(histogram)
-			combined_hist_plot.title("%s Color-Combined Histogram" % file)
-			combined_hist_plot.savefig(os.path.join(OUTPUT_DIR, '%s_Comb_Hist.jpg' % file))
+			# Combine image layers
+			joinedlayers = BC.joinLayers(image)
+			print "Joined layers shape: {}".format(joinedlayers.shape)
 
-			start, end = BC.findRange(combined_hist, .10)
+			# Joined Histogram
+			joined_hist = BC.createJoinedHistogram(joinedlayers)
+			joinedhistgraph = BC.drawHistogram([joined_hist])
+			joinedhistgraph.savefig(os.path.join(OUTPUT_DIR, '%s_Comb_Hist.jpg' % file))
+
+			# Find target range
+			start, end = BC.findRange(joined_hist, .10)
 			print "90%% of pixels lie between %d and %d" % (start, end)
+
+			# Rescale brightness linearly
+			print "Scaling images to between {} and {}".format(start/3, end/3)
+			rescaled = BC.linearRescale(image, start/3, end/3)
+			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_LinearScaling.jpg' % file), rescaled)
+			print "Min val: {} \t Max val: {}".format(np.min(rescaled), np.max(rescaled))
