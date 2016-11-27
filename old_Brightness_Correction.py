@@ -94,9 +94,6 @@ def old_linearRescale(image, start, end):
 
 	scale = 255 / (end - start)
 
-	# for index, pixel in np.ndenumerate(image):
-	# 	image[index] = max(( pixel - start ) * scale, 0)
-
 	for index in range(image.shape[2]):
 		output[:,:,index] = (image[:,:,index] - start ) * scale
 
@@ -109,12 +106,11 @@ def old_linearRescale(image, start, end):
 
 # Given an image, it's joined values, and a target range, scale the original image to fit the desired histogram
 # Outputs a float numpy array of the same size and shape as image
-def linearRescale(image, joinedimage, start, end, mask):
+def linearRescale(image, joinedimage, start, end, light_mask, dark_mask):
 
 	output = np.zeros(image.shape, dtype=np.float)
 	scale = 255.0 / (end - start)
 	print "Range is {} and scale is {:.2f}".format(end - start, scale)
-
 
 	joined_rescaled = (joinedimage - start) * scale 
 	for i in range(image.shape[2]):
@@ -122,31 +118,34 @@ def linearRescale(image, joinedimage, start, end, mask):
 		output[:,:,i] = joined_rescaled * (image[:,:,i] / joinedimage) / (1.0/3.0)
 		print "Average output for this color is {:.1f}".format(np.average(output[:,:,i]))
 
+	# Adjust the brightest and darkest areas with a non-linear scaling
+	# dark_boost_max = 2		# Max scaling to increase darkest areas
+	# dark_boost_range = 20
+	# for i in range(0, dark_boost_range):
+	# 	dark_mask = output == i
+	# 	output[mask] = output[mask] * dark_boost_max * (dark_boost_range - i) / dark_boost_range
+
+	adark_mask = output < 15
+	output[adark_mask] = output[adark_mask] * 2
+	bright_mask = output > 245
+	output[bright_mask] = output[bright_mask] * .95
 
 	# Only scale unmasked regions by copying over original image data that was masked
-	mask_3D = np.full(image.shape, False, dtype=np.uint8)
+	mask_3Dl = np.full(image.shape, False, dtype=np.uint8)
+	mask_3Dd = np.full(image.shape, False, dtype=np.uint8)
 	for i in range(image.shape[2]):
-		mask_3D[:,:, i] = mask
-	# print "Image size: {}".format(image.shape)
-	# print "Output size: {}".format(output.shape)
-	# print "Mask size: {}".format(mask_3D.shape)
-	# print mask_3D
-	anothermask = mask_3D == 0
-	# print anothermask
-	# print "Another mask size: {}".format(anothermask.shape)
-	output[anothermask] = image[anothermask]
+		mask_3Dl[:,:, i] = light_mask
+		mask_3Dd[:,:, i] = dark_mask
+	almask = mask_3Dl == 0
+	admask = mask_3Dd == 0
+	output[almask] = image[almask] * .98
+	output[admask] = image[admask] * 2
 	print "Average output post mask {:.1f} \t Max: {}".format(np.average(output), np.max(output))
 
-	# for index, pixel in np.ndenumerate(joinedimage):
-	# 	scaled = (pixel - start) * scale
-	# 	print "index = {} \t Output: {}".format(index, output[index])
-	# 	for i in range(image.shape[2]):
-	# 		output[index][i] = scaled * (image[index][i] / pixel)
-
-	# lower_bound_mask = output < 0
-	# output[lower_bound_mask] = 0
-	# upper_bound_mask = output > 255
-	# output[upper_bound_mask] = 255
+	lower_bound_mask = output < 0
+	output[lower_bound_mask] = 0
+	upper_bound_mask = output > 255
+	output[upper_bound_mask] = 255
 
 	return output
 	# return output.astype(np.uint8)

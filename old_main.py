@@ -46,8 +46,10 @@ if __name__ == "__main__":
 			mask = np.full(joinedlayers.shape, 255, dtype=np.uint8)
 			im_mask =  joinedlayers >= 700
 			mask[im_mask] = 0
+			light_mask = mask
 			im_mask = joinedlayers <= 45
 			mask[im_mask] = 0
+			dark_mask = mask
 			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_joined_mask.jpg' % file), mask)
 			joined_hist = BC.createJoinedHistogram(joinedlayers, mask)
 			joinedhistgraph = BC.drawHistogram([joined_hist])
@@ -59,9 +61,11 @@ if __name__ == "__main__":
 
 			# Rescale brightness linearly
 			print "Scaling images to between {} and {}".format(start, end)
-			rescaled = BC.linearRescale(image, joinedlayers, start, end, mask)
+			rescaled = BC.linearRescale(image, joinedlayers, start, end, light_mask, dark_mask)
 			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_LinearScaling.jpg' % file), rescaled)
 			print "Min val: {} \t Max val: {}".format(np.min(rescaled), np.max(rescaled))
+
+			# fixed_extreme = BC.adjustExtremes(rescaled, image, bright_mask, dark_mask)
 
 			print "\n"
 
