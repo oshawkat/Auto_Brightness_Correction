@@ -45,7 +45,7 @@ if __name__ == "__main__":
 			print "90%% of pixels lie between %d and %d" % (start, end)
 
 			# Rescale brightness linearly
-			print "Scaling images to between {} and {}".format(start/3, end/3)
-			rescaled = BC.linearRescale(image, start/3, end/3)
+			print "Scaling images to between {} and {}".format(start, end)
+			rescaled = BC.linearRescale(image, joinedlayers, start, end)
 			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_LinearScaling.jpg' % file), rescaled)
 			print "Min val: {} \t Max val: {}".format(np.min(rescaled), np.max(rescaled))

@@ -60,14 +60,14 @@ def findRange(histogram, threshold):
 	i = 0
 	while np.sum(histogram[:i]) <= total_pixels * threshold:
 		i += 1
-	start = i
+	start = i - 1
 
 	# Also find upper bound
 	total = 0
 	i = histogram.shape[0]
 	while np.sum(histogram[i:]) <= total_pixels * threshold:
 		i -= 1
-	end = i
+	end = i + 1
 
 	return start, end
 
@@ -87,11 +87,11 @@ def joinLayers(image):
 
 # Given an image, it's joined values, and a target range, scale the original image to fit the desired histogram
 # Outputs a float numpy array of the same size and shape as image
-def linearRescale(image, start, end):
+def old_linearRescale(image, start, end):
 
 	output = np.zeros(image.shape, dtype=np.float)
 
-	scale = 256 / (end - start)
+	scale = 255 / (end - start)
 
 	# for index, pixel in np.ndenumerate(image):
 	# 	image[index] = max(( pixel - start ) * scale, 0)
@@ -105,3 +105,33 @@ def linearRescale(image, start, end):
 	output[upper_bound_mask] = 255
 
 	return output.astype(np.uint8)
+
+# Given an image, it's joined values, and a target range, scale the original image to fit the desired histogram
+# Outputs a float numpy array of the same size and shape as image
+def linearRescale(image, joinedimage, start, end):
+
+	output = np.zeros(image.shape, dtype=np.float)
+	scale = 255.0 / (end - start)
+
+	print "Image size: {}".format(image.shape)
+	print "joinedimage size: {}".format(joinedimage.shape)
+	print "Output size: {}".format(output.shape)
+
+	scale_factor = (joinedimage - start) 
+	for i in range(image.shape[2]):
+		output[:,:,i] = scale_factor * image[:,:,i] / joinedimage * scale
+
+
+	# for index, pixel in np.ndenumerate(joinedimage):
+	# 	scaled = (pixel - start) * scale
+	# 	print "index = {} \t Output: {}".format(index, output[index])
+	# 	for i in range(image.shape[2]):
+	# 		output[index][i] = scaled * (image[index][i] / pixel)
+
+	lower_bound_mask = output < 0
+	output[lower_bound_mask] = 0
+	upper_bound_mask = output > 255
+	output[upper_bound_mask] = 255
+
+	return output.astype(np.uint8)
+
