@@ -12,7 +12,7 @@ def createHistogram(image, mask):
 	histogram = []
 
 	for channel in range(image.shape[2]):
-		hist = cv2.calcHist([image.astype(np.uint8)], [channel], None, [256], [0, 256])
+		hist = cv2.calcHist([image.astype(np.uint8)], [channel], mask[:,:,channel], [256], [0, 256])
 		histogram.append(hist)
 		
 	return histogram
@@ -20,8 +20,8 @@ def createHistogram(image, mask):
 
 # Similar to createHistogram but can process the summation of up to 3 joined layers
 # Outputs a single histogram of with 3x the range 
-def createJoinedHistogram(image):
-	histogram = cv2.calcHist(image.astype(np.uint16), [0], None, [768], [0, 768])
+def createJoinedHistogram(image, mask):
+	histogram = cv2.calcHist([image.astype(np.uint16)], [0], mask, [768], [0, 768])
 	# histogram = cv2.calcHist(image, [0], None, [256 * 3], [0, 256 * 3])
 
 	return histogram
@@ -51,7 +51,7 @@ def drawHistogram(histograms):
 
 # Finds the appropriate upper and lower pixel value bounds that excludes the threshold percentage
 # of pixels on both sides of the histogram
-def findRange(histogram, threshold):
+def findRange(histogram, lower_threshold, upper_threshold):
 
 	# Calculate total number of pixels in the histogram (if used with joinHistLayers, will count total for each channel)
 	total_pixels = np.sum(histogram)
@@ -59,14 +59,14 @@ def findRange(histogram, threshold):
 	# Starting from the bottom of the range, 0, find the intensity value for which a threshold percent of pixels are excluded
 	total = 0
 	i = 0
-	while np.sum(histogram[:i]) <= total_pixels * threshold:
+	while np.sum(histogram[:i]) <= total_pixels * lower_threshold:
 		i += 1
 	start = i - 1
 
 	# Also find upper bound
 	total = 0
 	i = histogram.shape[0]
-	while np.sum(histogram[i:]) <= total_pixels * threshold:
+	while np.sum(histogram[i:]) <= total_pixels * upper_threshold:
 		i -= 1
 	end = i + 1
 
@@ -109,19 +109,33 @@ def old_linearRescale(image, start, end):
 
 # Given an image, it's joined values, and a target range, scale the original image to fit the desired histogram
 # Outputs a float numpy array of the same size and shape as image
-def linearRescale(image, joinedimage, start, end):
+def linearRescale(image, joinedimage, start, end, mask):
 
 	output = np.zeros(image.shape, dtype=np.float)
-	scale = (end - start) / 255.0
+	scale = 255.0 / (end - start)
+	print "Range is {} and scale is {:.2f}".format(end - start, scale)
 
-	# print "Image size: {}".format(image.shape)
-	# print "joinedimage size: {}".format(joinedimage.shape)
-	# print "Output size: {}".format(output.shape)
 
-	scale_factor = (joinedimage - start) 
+	joined_rescaled = (joinedimage - start) * scale 
 	for i in range(image.shape[2]):
-		output[:,:,i] = scale_factor * image[:,:,i] / joinedimage * scale
+		print "Color {}, at avg val of {:5.1f}, represents {:.1%} of the joined image, with avg of {:5.1f}".format(i, np.average(image[:,:,i]), np.average(image[:,:,i]) / np.average(joinedimage), np.average(joinedimage))
+		output[:,:,i] = joined_rescaled * (image[:,:,i] / joinedimage) / (1.0/3.0)
+		print "Average output for this color is {:.1f}".format(np.average(output[:,:,i]))
 
+
+	# Only scale unmasked regions by copying over original image data that was masked
+	mask_3D = np.full(image.shape, False, dtype=np.uint8)
+	for i in range(image.shape[2]):
+		mask_3D[:,:, i] = mask
+	# print "Image size: {}".format(image.shape)
+	# print "Output size: {}".format(output.shape)
+	# print "Mask size: {}".format(mask_3D.shape)
+	# print mask_3D
+	anothermask = mask_3D == 0
+	# print anothermask
+	# print "Another mask size: {}".format(anothermask.shape)
+	output[anothermask] = image[anothermask]
+	print "Average output post mask {:.1f} \t Max: {}".format(np.average(output), np.max(output))
 
 	# for index, pixel in np.ndenumerate(joinedimage):
 	# 	scaled = (pixel - start) * scale

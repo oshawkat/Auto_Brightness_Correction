@@ -5,7 +5,7 @@ import numpy as np
 import numpy.ma as ma
 from matplotlib import pyplot as plt
 
-import Brightness_Correction as BC
+import old_Brightness_Correction as BC
 
 
 SOURCE_DIR = './source'
@@ -27,9 +27,12 @@ if __name__ == "__main__":
 			print "Image shape: {}".format(image.shape)
 			
 			# BGR Histogram
-			mask = np.full((image.shape[0], image.shape[1]), 255, dtype=np.uint8)
-			im_mask = image[:,:,1] >= 200
-			mask[im_mask] = 0
+			mask = np.full((image.shape[0], image.shape[1], 3), 255, dtype=np.uint8)
+			# im_mask =  image >= 245
+			# mask[im_mask] = 0
+			# im_mask = image <= 15
+			# mask[im_mask] = 0
+			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_color_mask.jpg' % file), mask)
 			histogram = BC.createHistogram(image, mask)
 			graph = BC.drawHistogram(histogram)
 			graph.title("%s Histogram" % file)
@@ -40,17 +43,23 @@ if __name__ == "__main__":
 			print "Joined layers shape: {}".format(joinedlayers.shape)
 
 			# Joined Histogram
-			joined_hist = BC.createJoinedHistogram(joinedlayers)
+			mask = np.full(joinedlayers.shape, 255, dtype=np.uint8)
+			im_mask =  joinedlayers >= 700
+			mask[im_mask] = 0
+			im_mask = joinedlayers <= 45
+			mask[im_mask] = 0
+			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_joined_mask.jpg' % file), mask)
+			joined_hist = BC.createJoinedHistogram(joinedlayers, mask)
 			joinedhistgraph = BC.drawHistogram([joined_hist])
 			joinedhistgraph.savefig(os.path.join(OUTPUT_DIR, '%s_Comb_Hist.jpg' % file))
 
 			# Find target range
-			start, end = BC.findRange(joined_hist, .10)
-			print "90%% of pixels lie between %d and %d" % (start, end)
+			start, end = BC.findRange(joined_hist, .00, .1)
+			print "80%% of non-extreme pixels lie between %d and %d" % (start, end)
 
 			# Rescale brightness linearly
 			print "Scaling images to between {} and {}".format(start, end)
-			rescaled = BC.linearRescale(image, joinedlayers, start, end)
+			rescaled = BC.linearRescale(image, joinedlayers, start, end, mask)
 			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_LinearScaling.jpg' % file), rescaled)
 			print "Min val: {} \t Max val: {}".format(np.min(rescaled), np.max(rescaled))
 
