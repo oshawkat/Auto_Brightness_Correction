@@ -27,8 +27,8 @@ if __name__ == "__main__":
 			print "Image shape: {}".format(image.shape)
 			
 			# BGR Histogram
-			mask = np.full((image.shape[0], image.shape[1], 3), 255, dtype=np.uint8)
-			im_mask = image >= 255
+			mask = np.full((image.shape[0], image.shape[1]), 255, dtype=np.uint8)
+			im_mask = image[:,:,1] >= 200
 			mask[im_mask] = 0
 			histogram = BC.createHistogram(image, mask)
 			graph = BC.drawHistogram(histogram)

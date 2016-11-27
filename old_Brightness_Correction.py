@@ -12,7 +12,7 @@ def createHistogram(image, mask):
 	histogram = []
 
 	for channel in range(image.shape[2]):
-		hist = cv2.calcHist([image.astype(np.uint8)], [channel], mask[:,:,channel], [256], [0, 256])
+		hist = cv2.calcHist([image.astype(np.uint8)], [channel], None, [256], [0, 256])
 		histogram.append(hist)
 		
 	return histogram
