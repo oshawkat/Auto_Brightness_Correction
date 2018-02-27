@@ -2,9 +2,9 @@
 
 The goal of this project is to minimize the impact of excessively bright/dark areas of a photo (eg sun, street lamps, direct backlighting) and provide greater detail and range in the rest of the image.  As currently structured, the module provides a range of functions to enable exploration of image histograms and applying corrections.
 
-For a detailed overview of development, capabilities, and results, please look at the included [Project Overview](Project\ Overview.pdf)
+For a detailed overview of development, capabilities, and results, please look at the included [Project Overview](Project-Overview.pdf)
 
-Note that the current implementation of the module does require some hyperparameter setting by the user, as shown in the example script.  Please refer to [Project Overview](Project\ Overview.pdf) for intended future extension and fully-automated brightness correction.
+Note that the current implementation of the module does require some hyperparameter setting by the user, as shown in the example script.  Please refer to [Project Overview](Project-Overview.pdf) for intended future extension and fully-automated brightness correction.
 
 ### Prerequisites
 
