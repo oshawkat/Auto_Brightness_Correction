@@ -5,10 +5,10 @@ import numpy as np
 import numpy.ma as ma
 from matplotlib import pyplot as plt
 
-import Brightness_Correction as BC
+from BrightnessCorrection import BrightnessCorrection as BC
 
 
-SOURCE_DIR = './source'
+SOURCE_DIR = './input'
 OUTPUT_DIR = './output'
 
 if __name__ == "__main__":
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 			im_mask =  joinedlayers >= 700
 			mask[im_mask] = 0
 			light_mask = mask
-			im_mask = joinedlayers <= 45
+			im_mask = joinedlayers <= 30
 			mask[im_mask] = 0
 			dark_mask = mask
 			cv2.imwrite(os.path.join(OUTPUT_DIR, '%s_joined_mask.jpg' % file), mask)
